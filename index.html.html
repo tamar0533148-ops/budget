@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול תקציב משפחתי חכם | מעקב הוצאות, יעדים ומעגל השנה</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Heebo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS (XLSX) for Reading & Exporting Excel/CSV Files -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Tailwind Custom Palette & Typography -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Heebo', 'sans-serif'],
+                    },
+                    colors: {
+                        turq: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0D9488',
+                            700: '#0F766E',
+                            800: '#115e59',
+                        },
+                        peach: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            300: '#FDBA74',
+                            400: '#FB923C',
+                            500: '#f97316',
+                        },
+                        mint: {
+                            50: '#ecfdf5',
+                            100: '#D1FAE5',
+                            500: '#10B981',
+                            600: '#059669',
+                        },
+                        softyellow: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Heebo', sans-serif;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(15, 118, 110, 0.07);
+        }
+        .tab-active {
+            background-color: #0F766E;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+        }
+        .tab-inactive {
+            background-color: #ffffff;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .tab-inactive:hover {
+            background-color: #f0fdfa;
+            color: #0F766E;
+            border-color: #99f6e4;
+        }
+        /* Exact Conditional Styling matching Google Sheets */
+        .variance-positive {
+            background-color: #E6F4EA;
+            color: #137333;
+            font-weight: 700;
+        }
+        .variance-negative {
+            background-color: #FCE8E6;
+            color: #C5221F;
+            font-weight: 700;
+        }
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row justify-between items-center py-3.5 gap-3">
+                
+                <!-- Brand & Title -->
+                <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-turq-600 to-turq-700 text-white flex items-center justify-center shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-peach-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-extrabold text-turq-700 leading-tight">מערכת חכמה לניהול תקציב משפחתי</h1>
+                            <p class="text-xs text-slate-500">מעקב הוצאות, יעדים ומעגל השנה — כל הנתונים נשמרים פרטית בדפדפן שלך</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Prominent Global Action Buttons -->
+                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
+                    <button onclick="startFreshConfirm()" class="flex items-center gap-1.5 bg-peach-50 hover:bg-peach-100 text-orange-800 border border-peach-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                        <span>✨</span>
+                        <span>התחל מאפס / נקה נתונים</span>
+                    </button>
+
+                    <button onclick="exportJsonBackup()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition" title="שמור קובץ גיבוי להעברה למכשיר אחר">
+                        <span>💾</span>
+                        <span>גיבוי (JSON)</span>
+                    </button>
+
+                    <label class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer" title="טען קובץ גיבוי קיים">
+                        <span>📂</span>
+                        <span>שחזור</span>
+                        <input type="file" accept=".json" class="hidden" onchange="importJsonBackup(event)">
+                    </label>
+
+                    <button onclick="exportToExcel()" class="flex items-center gap-1.5 bg-mint-500 hover:bg-mint-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>ייצוא לאקסל מלא (Excel)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 overflow-x-auto pb-3 pt-1 no-scrollbar" aria-label="Tabs">
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="tab-active px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+                    <span>📊 דשבורד סיכום והשוואה</span>
+                </button>
+                <button onclick="switchTab('monthly')" id="tab-btn-monthly" class="tab-inactive px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+                    <span>📅 מעקב חודשי ויעדים</span>
+                </button>
+                <button onclick="switchTab('annual')" id="tab-btn-annual" class="tab-inactive px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+                    <span>🗓️ הוצאות שנתיות ומעגל השנה</span>
+                </button>
+                <button onclick="switchTab('upload')" id="tab-btn-upload" class="tab-inactive px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+                    <span>📥 העלאת קובצי אשראי ובנק</span>
+                </button>
+                <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-inactive px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex items-center gap-2">
+                    <span>⚙️ הגדרות, קטגוריות ויעדים</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================================= -->
+        <!-- TAB 1: DASHBOARD & COMPARISON                             -->
+        <!-- ========================================================= -->
+        <section id="view-dashboard" class="space-y-6">
+            
+            <!-- Filter & Quick Info Bar -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 card-shadow flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <label for="dashboard-month-select" class="text-sm font-bold text-slate-700">חודש מוצג לבדיקת יעד והתפלגות:</label>
+                    <select id="dashboard-month-select" onchange="renderDashboard()" class="bg-turq-50 border border-turq-500/40 text-turq-700 font-extrabold text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-turq-600">
+                    </select>
+                </div>
+                <div class="text-xs text-slate-600 bg-softyellow-100 border border-softyellow-200 px-3.5 py-2 rounded-xl font-medium">
+                    💡 הוצאות חגים ורכישות שנתיות מופרדות אוטומטית ללשונית "הוצאות שנתיות" כדי לשמור על דיוק התקציב החודשי
+                </div>
+            </div>
+
+            <!-- 4 Top KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- KPI 1: Total Expenses for Period -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500">סה"כ הוצאות לתקופה (חודשי)</p>
+                            <h3 id="kpi-period-total" class="text-2xl font-extrabold text-turq-700 mt-1">₪0</h3>
+                        </div>
+                        <span class="p-2.5 rounded-xl bg-turq-50 text-turq-700 text-lg">💳</span>
+                    </div>
+                    <p id="kpi-period-sub" class="text-xs text-slate-500 mt-3">מצטבר על פני 0 חודשים</p>
+                </div>
+
+                <!-- KPI 2: Monthly Average -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500">ממוצע הוצאות חודשי</p>
+                            <h3 id="kpi-monthly-avg" class="text-2xl font-extrabold text-slate-800 mt-1">₪0</h3>
+                        </div>
+                        <span class="p-2.5 rounded-xl bg-softyellow-100 text-amber-700 text-lg">📊</span>
+                    </div>
+                    <p id="kpi-avg-sub" class="text-xs text-slate-500 mt-3">יעד חודשי כולל: ₪0</p>
+                </div>
+
+                <!-- KPI 3: Monthly Target Variance (Green/Red) -->
+                <div id="kpi-variance-card" class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p id="kpi-variance-label" class="text-xs font-semibold text-slate-600">עמידה ביעד חודשי (הפרש)</p>
+                            <h3 id="kpi-month-variance" class="text-2xl font-extrabold mt-1">₪0</h3>
+                        </div>
+                        <span id="kpi-variance-icon" class="p-2.5 rounded-xl bg-mint-100 text-mint-600 text-lg">✅</span>
+                    </div>
+                    <p id="kpi-variance-status" class="text-xs font-bold mt-3">עמידה בתקציב</p>
+                </div>
+
+                <!-- KPI 4: Annual Budget Utilization % -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500">ניצול תקציב שנתי וחגים</p>
+                            <h3 id="kpi-annual-pct" class="text-2xl font-extrabold text-peach-500 mt-1">0%</h3>
+                        </div>
+                        <span class="p-2.5 rounded-xl bg-peach-100 text-peach-500 text-lg">🗓️</span>
+                    </div>
+                    <p id="kpi-annual-sub" class="text-xs text-slate-500 mt-3">₪0 מתוך ₪0 יעד שנתי</p>
+                </div>
+            </div>
+
+            <!-- Two Side-by-Side Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Bar Chart: Variable vs Fixed across months -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-extrabold text-turq-700">הוצאות משתנות מול קבועות לפי חודשים</h3>
+                        <span class="text-xs text-slate-400">השוואה חודשית</span>
+                    </div>
+                    <div class="relative h-72 w-full">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Doughnut Chart: Category Distribution -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-extrabold text-turq-700">התפלגות קטגוריות בחודש הנבחר</h3>
+                        <span id="doughnut-month-badge" class="text-xs font-bold bg-turq-50 text-turq-700 px-2.5 py-1 rounded-lg"></span>
+                    </div>
+                    <div class="relative h-72 w-full flex items-center justify-center">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Comparison Table Across Months -->
+            <div class="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden">
+                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h3 class="text-base font-extrabold text-turq-700">טבלת סיכום והשוואה בין חודשים</h3>
+                        <p class="text-xs text-slate-500">ריכוז הוצאות משתנות, הוצאות קבועות, סה"כ חודשי, ממוצע חודשי ואחוז מכלל ההוצאות</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-right border-collapse">
+                        <thead id="comparison-thead" class="bg-turq-700 text-white text-xs">
+                        </thead>
+                        <tbody id="comparison-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                        <tfoot id="comparison-tfoot" class="bg-turq-50 font-extrabold text-turq-800 border-t-2 border-turq-700">
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 2: MONTHLY TRACKING & TARGETS                         -->
+        <!-- ========================================================= -->
+        <section id="view-monthly" class="hidden space-y-6">
+            
+            <!-- Month Controls & Quick Add -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 card-shadow flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <label for="monthly-select" class="text-sm font-extrabold text-turq-700">בחר גיליון חודש:</label>
+                    <select id="monthly-select" onchange="renderMonthlyView()" class="bg-turq-50 border border-turq-500/40 text-turq-800 font-extrabold text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-turq-600">
+                    </select>
+                    <button onclick="openAddMonthModal()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl transition">
+                        + פתח חודש חדש
+                    </button>
+                </div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <span class="text-xs px-2.5 py-1 rounded-lg variance-positive">עמידה ביעד</span>
+                    <span class="text-xs px-2.5 py-1 rounded-lg variance-negative">חריגה מהיעד</span>
+                    <button onclick="openAddTransactionModal()" class="flex items-center gap-1.5 bg-turq-600 hover:bg-turq-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">
+                        <span>+ הוסף הוצאה ידנית / מזומן</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two Clearly Separated Tables: Variable Expenses & Fixed Expenses -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                
+                <!-- Table 1: Variable Expenses -->
+                <div class="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden flex flex-col">
+                    <div class="p-4 bg-turq-700 text-white flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-extrabold">הוצאות משתנות (צריכה שוטפת)</h3>
+                            <p class="text-xs text-turq-100">לחץ על כל שורה לפירוט עסקאות, עריכה או שינוי קטגוריה</p>
+                        </div>
+                        <span id="var-header-total" class="text-xs font-extrabold bg-white/15 px-3 py-1.5 rounded-xl">₪0</span>
+                    </div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-700 text-xs border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3 px-3 font-bold">קטגוריה</th>
+                                    <th class="py-3 px-3 font-bold">פירוט החנויות</th>
+                                    <th class="py-3 px-3 font-bold">סכום בפועל (₪)</th>
+                                    <th class="py-3 px-3 font-bold">יעד חודשי (₪)</th>
+                                    <th class="py-3 px-3 font-bold">הפרש מהיעד (₪)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variable-tbody" class="divide-y divide-slate-100">
+                            </tbody>
+                            <tfoot id="variable-tfoot" class="bg-turq-50/70 font-extrabold text-turq-800 border-t-2 border-slate-300">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Table 2: Fixed Expenses & Standing Orders -->
+                <div class="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden flex flex-col">
+                    <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-extrabold">הוצאות קבועות והו"ק</h3>
+                            <p class="text-xs text-slate-300">לחץ על כל שורה לפירוט ספקים ועריכת עסקאות</p>
+                        </div>
+                        <span id="fix-header-total" class="text-xs font-extrabold bg-white/15 px-3 py-1.5 rounded-xl">₪0</span>
+                    </div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50 text-slate-700 text-xs border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3 px-3 font-bold">קטגוריה</th>
+                                    <th class="py-3 px-3 font-bold">פירוט החנויות</th>
+                                    <th class="py-3 px-3 font-bold">סכום בפועל (₪)</th>
+                                    <th class="py-3 px-3 font-bold">יעד חודשי (₪)</th>
+                                    <th class="py-3 px-3 font-bold">הפרש מהיעד (₪)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fixed-tbody" class="divide-y divide-slate-100">
+                            </tbody>
+                            <tfoot id="fixed-tfoot" class="bg-slate-100 font-extrabold text-slate-800 border-t-2 border-slate-300">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Interactive Transactions Breakdown Drawer/Panel -->
+            <div class="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50/60">
+                    <div>
+                        <h3 id="tx-list-title" class="text-base font-extrabold text-turq-700">פירוט כל העסקאות בחודש הנבחר</h3>
+                        <p class="text-xs text-slate-500">ניתן לשנות שיוך קטגוריה (כולל העברה להוצאות שנתיות/חגים) או למחוק עסקה</p>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <select id="tx-category-filter" onchange="renderMonthlyTransactions()" class="text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white font-semibold text-slate-700">
+                            <option value="ALL">כל הקטגוריות בחודש</option>
+                        </select>
+                        <input type="text" id="tx-search-box" onkeyup="renderMonthlyTransactions()" placeholder="חיפוש בית עסק..." class="text-xs border border-slate-300 rounded-xl px-3 py-2 w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-turq-600">
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-sm text-right">
+                        <thead class="bg-slate-100 text-slate-600 text-xs sticky top-0 border-b border-slate-200">
+                            <tr>
+                                <th class="py-2.5 px-4">תאריך</th>
+                                <th class="py-2.5 px-4">בית עסק</th>
+                                <th class="py-2.5 px-4">סכום (₪)</th>
+                                <th class="py-2.5 px-4">קטגוריה משויכת</th>
+                                <th class="py-2.5 px-4 text-center">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-tx-tbody" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 3: ANNUAL & HOLIDAY EXPENSES                          -->
+        <!-- ========================================================= -->
+        <section id="view-annual" class="hidden space-y-6">
+            
+            <!-- 4 Annual KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <p class="text-xs font-semibold text-slate-500">יעד שנתי כולל (מעגל השנה)</p>
+                    <h3 id="ann-kpi-target" class="text-2xl font-extrabold text-turq-700 mt-1">₪0</h3>
+                    <p class="text-xs text-slate-400 mt-2">כולל חגי תשרי, פסח, רכב, חינוך ונופש</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <p class="text-xs font-semibold text-slate-500">ביצוע בפועל מצטבר</p>
+                    <h3 id="ann-kpi-actual" class="text-2xl font-extrabold text-slate-800 mt-1">₪0</h3>
+                    <p class="text-xs text-slate-400 mt-2">הוצאות חגים ושנתיות ששויכו</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <p class="text-xs font-semibold text-slate-500">יתרת תקציב שנתית</p>
+                    <h3 id="ann-kpi-diff" class="text-2xl font-extrabold text-mint-600 mt-1">₪0</h3>
+                    <p class="text-xs text-slate-400 mt-2">סכום שנותר לניצול במהלך השנה</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 card-shadow">
+                    <p class="text-xs font-semibold text-slate-500">אחוז ניצול שנתי</p>
+                    <h3 id="ann-kpi-pct" class="text-2xl font-extrabold text-peach-500 mt-1">0%</h3>
+                    <div class="w-full bg-slate-100 rounded-full h-2 mt-3">
+                        <div id="ann-kpi-bar" class="bg-peach-400 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Annual & Holiday Categories Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden">
+                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-turq-50/40">
+                    <div>
+                        <h3 class="text-base font-extrabold text-turq-700">הוצאות שנתיות ומעגל השנה (חגים ואירועים)</h3>
+                        <p class="text-xs text-slate-600">הפרדה מובנית של ביגוד והנעלה לחגי תשרי וסוכות מול חג הפסח, לצד הוצאות החגים והשנה</p>
+                    </div>
+                    <button onclick="openAddTransactionModal('annual')" class="bg-turq-600 hover:bg-turq-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">
+                        + הוסף הוצאה שנתית / חג
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-right">
+                        <thead class="bg-turq-700 text-white text-xs">
+                            <tr>
+                                <th class="py-3.5 px-4 font-bold">קטגוריה שנתית</th>
+                                <th class="py-3.5 px-4 font-bold">פירוט הסעיפים ועסקאות</th>
+                                <th class="py-3.5 px-4 font-bold">יעד שנתי (₪)</th>
+                                <th class="py-3.5 px-4 font-bold">ביצוע בפועל (₪)</th>
+                                <th class="py-3.5 px-4 font-bold">הפרש מהיעד (₪)</th>
+                                <th class="py-3.5 px-4 font-bold">% ניצול</th>
+                            </tr>
+                        </thead>
+                        <tbody id="annual-tbody" class="divide-y divide-slate-100">
+                        </tbody>
+                        <tfoot id="annual-tfoot" class="bg-turq-50 font-extrabold text-turq-800 border-t-2 border-turq-700">
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 4: UPLOAD CREDIT CARD / BANK STATEMENTS               -->
+        <!-- ========================================================= -->
+        <section id="view-upload" class="hidden space-y-6">
+            
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 card-shadow">
+                <div class="max-w-3xl">
+                    <h2 class="text-lg font-extrabold text-turq-700">העלאת קובצי פירוט אשראי או עובר ושב (Excel / CSV)</h2>
+                    <p class="text-xs text-slate-600 mt-1">תומך בקבצים מכל חברות האשראי (ישראכרט, מקס, כאל, אמריקן אקספרס) ודפי בנק (פועלים, לאומי, דיסקונט, מזרחי, פאג"י). המערכת מזהה אוטומטית תאריכים, בתי עסק וסכומים, ומסווגת לפי מילות המפתח שלך.</p>
+                </div>
+
+                <!-- Dropzone -->
+                <label for="statement-file-input" class="mt-5 border-2 border-dashed border-turq-500/40 hover:border-turq-600 bg-turq-50/40 hover:bg-turq-50 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-turq-600 text-white flex items-center justify-center mb-3 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                    </div>
+                    <span class="text-base font-extrabold text-turq-800">גרור לכאן קובץ פירוט אשראי / בנק או לחץ לבחירה</span>
+                    <span class="text-xs text-slate-500 mt-1">פורמטים נתמכים: .xlsx, .xls, .csv | העיבוד מתבצע בדפדפן שלך בלבד</span>
+                    <input type="file" id="statement-file-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleStatementUpload(event)">
+                </label>
+
+                <!-- Staging Review Table -->
+                <div id="staging-wrapper" class="hidden mt-6 pt-6 border-t border-slate-200 space-y-4">
+                    <div class="bg-peach-50 border border-peach-300 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-800">סקירה וסיווג עסקאות לפני קליטה למערכת</h3>
+                            <p id="staging-stats" class="text-xs text-slate-600 mt-0.5">זוהו 0 עסקאות</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <label for="staging-target-month" class="text-xs font-bold text-slate-700">חודש יעד:</label>
+                                <input type="text" id="staging-target-month" value="נובמבר 2026" class="text-xs font-extrabold bg-white border border-slate-300 rounded-xl px-3 py-2 w-36 text-turq-800">
+                            </div>
+                            <label class="flex items-center gap-2 text-xs font-bold text-orange-900 bg-white px-3 py-2 rounded-xl border border-peach-300 cursor-pointer">
+                                <input type="checkbox" id="route-clothing-holiday-toggle" onchange="toggleHolidayClothingRouting(this.checked)" class="rounded text-turq-600">
+                                <span>נתב קניות ביגוד בקובץ זה לתקציב חגים (שנתי)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-[420px] border border-slate-200 rounded-2xl">
+                        <table class="w-full text-xs text-right">
+                            <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">תאריך</th>
+                                    <th class="py-2.5 px-3">בית עסק</th>
+                                    <th class="py-2.5 px-3">סכום (₪)</th>
+                                    <th class="py-2.5 px-3">קטגוריה (שוטף / קבוע / שנתי)</th>
+                                    <th class="py-2.5 px-3 text-center">פיצול 50%/50%</th>
+                                    <th class="py-2.5 px-3 text-center">הסר</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staging-tbody" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <button onclick="clearStaging()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">ביטול</button>
+                        <button onclick="commitStagedRows()" class="px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-turq-600 hover:bg-turq-700 shadow-md transition">
+                            ✅ הוסף עסקאות למערכת
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 5: SETTINGS, CUSTOM CATEGORIES & KEYWORDS             -->
+        <!-- ========================================================= -->
+        <section id="view-settings" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Categories & Targets Manager (7 cols) -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 card-shadow space-y-4">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-turq-700">ניהול קטגוריות ויעדי תקציב אישיים</h3>
+                        <p class="text-xs text-slate-500">כל משתמש יכול להוסיף קטגוריות משלו, לשנות שמות, לערוך יעדים חודשיים/שנתיים או למחוק קטגוריות.</p>
+                    </div>
+
+                    <!-- Add New Category Form -->
+                    <form onsubmit="handleAddCategory(event)" class="bg-turq-50/60 p-4 rounded-2xl border border-turq-100 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                        <div class="sm:col-span-5">
+                            <label class="text-xs font-bold text-slate-700 block mb-1">שם הקטגוריה החדשה</label>
+                            <input type="text" id="cfg-cat-name" required placeholder="למשל: חוגים / ספרים / משכנתא" class="w-full text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                        </div>
+                        <div class="sm:col-span-4">
+                            <label class="text-xs font-bold text-slate-700 block mb-1">שיוך טבלה</label>
+                            <select id="cfg-cat-type" class="w-full text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white font-semibold">
+                                <option value="variable">הוצאה משתנה (חודשי)</option>
+                                <option value="fixed">הוצאה קבועה / הו"ק</option>
+                                <option value="annual">הוצאה שנתית / חגים</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-3 flex gap-2">
+                            <div class="flex-grow">
+                                <label class="text-xs font-bold text-slate-700 block mb-1">יעד (₪)</label>
+                                <input type="number" id="cfg-cat-target" required min="0" step="10" placeholder="500" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white">
+                            </div>
+                            <button type="submit" class="bg-turq-600 hover:bg-turq-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl self-end transition">
+                                + הוסף
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Categories List -->
+                    <div id="cfg-categories-list" class="divide-y divide-slate-100 border border-slate-200 rounded-2xl max-h-[480px] overflow-y-auto">
+                    </div>
+                </div>
+
+                <!-- Auto-Categorization Keywords Manager (5 cols) -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200 card-shadow space-y-4">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-turq-700">חוקי סיווג אוטומטי (מילות מפתח)</h3>
+                        <p class="text-xs text-slate-500">כאשר עולה קובץ אשראי/בנק, המערכת מזהה מילות מפתח בשם בית העסק ומשייכת אוטומטית.</p>
+                    </div>
+
+                    <form onsubmit="handleAddKeywordRule(event)" class="bg-peach-50/70 p-4 rounded-2xl border border-peach-200 space-y-3">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 block mb-1">מילת מפתח לזיהוי (למשל: רמי לוי / שילב / סונול)</label>
+                            <input type="text" id="cfg-kw-word" required placeholder="הקלד שם עסק או מילה..." class="w-full text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                        </div>
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-grow">
+                                <label class="text-xs font-bold text-slate-700 block mb-1">שייך אוטומטית לקטגוריה:</label>
+                                <select id="cfg-kw-cat" class="w-full text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white"></select>
+                            </div>
+                            <button type="submit" class="bg-peach-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+                                שמור כלל
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="cfg-keywords-list" class="divide-y divide-slate-100 border border-slate-200 rounded-2xl max-h-[380px] overflow-y-auto">
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- MODALS                                                    -->
+    <!-- ========================================================= -->
+
+    <!-- Modal 1: Add Manual / Cash Transaction -->
+    <div id="modal-add-tx" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-extrabold text-turq-700">הוספת הוצאה ידנית / מזומן</h3>
+                <button onclick="closeAddTransactionModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <form onsubmit="submitManualTransaction(event)" class="space-y-3.5">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">חודש רישום</label>
+                    <select id="m-tx-month" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 bg-turq-50 font-bold text-turq-800"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">תאריך</label>
+                        <input type="text" id="m-tx-date" value="13.11.26" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">סכום (₪)</label>
+                        <input type="number" id="m-tx-amount" step="0.01" min="0.1" required placeholder="0.00" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">בית עסק / פירוט ההוצאה</label>
+                    <input type="text" id="m-tx-merchant" required placeholder="למשל: רמי לוי / קניית בגדים לפסח / מזומן" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">קטגוריה</label>
+                    <select id="m-tx-cat" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 bg-white"></select>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeAddTransactionModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">ביטול</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-extrabold text-white bg-turq-600 hover:bg-turq-700">הוסף למערכת</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Add New Month -->
+    <div id="modal-add-month" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-base font-extrabold text-turq-700 mb-2">פתיחת גיליון חודש חדש</h3>
+            <p class="text-xs text-slate-500 mb-4">הזן את שם החודש והשנה (לדוגמה: נובמבר 2026)</p>
+            <form onsubmit="submitNewMonth(event)" class="space-y-4">
+                <input type="text" id="m-new-month-name" required placeholder="נובמבר 2026" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-turq-800">
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeAddMonthModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100">ביטול</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-extrabold text-white bg-turq-600 hover:bg-turq-700">צור חודש</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Custom Confirmation Dialog (No window.confirm) -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center">
+            <h3 id="confirm-title" class="text-base font-extrabold text-turq-800 mb-2">אישור פעולה</h3>
+            <p id="confirm-body" class="text-xs text-slate-600 mb-5 leading-relaxed"></p>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">ביטול</button>
+                <button id="confirm-ok-btn" class="px-5 py-2 rounded-xl text-xs font-extrabold text-white bg-turq-600 hover:bg-turq-700">אישור</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT APPLICATION LOGIC                              -->
+    <!-- ========================================================= -->
+    <script>
+        const STORAGE_KEY = 'smart_budget_portal_v2';
+
+        // Default Preloaded Categories & Targets
+        const DEFAULT_CATEGORIES = [
+            // Variable Monthly
+            { id: 'var_food', name: 'קניות מרוכזות אוכל', type: 'variable', target: 3500, desc: 'רמי לוי, אושר עד, נטו חיסכון, שפע ברכת השם, ירקות' },
+            { id: 'var_clothing', name: 'ביגוד והנעלה שוטף', type: 'variable', target: 600, desc: 'קניות ביגוד והנעלה ביום-יום (לא כולל חגים)' },
+            { id: 'var_fuel', name: 'דלק', type: 'variable', target: 900, desc: 'סונול, פז, אלון, דלק מנטה' },
+            { id: 'var_transport', name: 'תחבורה', type: 'variable', target: 158, desc: 'רב קו אונליין, כביש 6, פנגו, חניונים' },
+            { id: 'var_eatout', name: 'אוכל בחוץ', type: 'variable', target: 700, desc: 'פיצה, מסעדות, מאפה הבית, רגע מתוק' },
+            { id: 'var_general', name: 'כללי', type: 'variable', target: 800, desc: 'קוסמטיקה, צעצועים, טמבור, חד פעמי, פנאי' },
+
+            // Fixed Monthly & Standing Orders
+            { id: 'fix_edu', name: 'חינוך ולימודים', type: 'fixed', target: 1860, desc: 'צהרונים, מעונות יום, מעלות בית יעקב' },
+            { id: 'fix_insurance', name: 'ביטוחים', type: 'fixed', target: 560, desc: 'ביטוח רכב, חיים ומשכנתא' },
+            { id: 'fix_health', name: 'בריאות', type: 'fixed', target: 400, desc: 'קופת חולים כללית, סיעודי, רופאים' },
+            { id: 'fix_charity', name: 'צדקה ותרומות', type: 'fixed', target: 1156, desc: 'מעשרות, עטרת התורה, אהלי אשר, למחייתם' },
+            { id: 'fix_comm', name: 'תקשורת, חשמל וסינון', type: 'fixed', target: 195, desc: 'סלקום, הוט מובייל, נטפרי, סייפטק, בזק אנרג׳י' },
+            { id: 'fix_home', name: 'אחזקת בית וניהול', type: 'fixed', target: 374, desc: 'דמי ניהול, ארנונה וועד בית' },
+            { id: 'fix_other', name: 'תשלומים קבועים נוספים', type: 'fixed', target: 10, desc: 'Google One, עמלות כרטיס' },
+
+            // Annual & Holiday Categories (Explicitly separated Tishrei/Sukkot vs Pesach, NO summer clothing)
+            { id: 'ann_cloth_tishrei', name: 'ביגוד והנעלה - חגי תשרי וסוכות (תחילת שנה)', type: 'annual', target: 3000, desc: 'ביגוד ראש השנה וסוכות, נעליים, ניקוי יבש' },
+            { id: 'ann_cloth_pesach', name: 'ביגוד והנעלה - חג הפסח (ניסן)', type: 'annual', target: 2000, desc: 'ביגוד והנעלה לקראת חג הפסח' },
+            { id: 'ann_hol_tishrei', name: 'הוצאות חגי תשרי וסוכות (שונות)', type: 'annual', target: 1150, desc: 'כפרות, הוצאות סוכה, מתנות לחג' },
+            { id: 'ann_hol_spring', name: 'הוצאות פורים, חנוכה ופסח (שונות)', type: 'annual', target: 1900, desc: 'דמי חנוכה, תחפושות, משלוחי מנות, מתנות פסח' },
+            { id: 'ann_gifts', name: 'מתנות לצוותי חינוך ואירועים', type: 'annual', target: 2150, desc: 'מתנות גננות ומלמדים, מתנות לבני הבית' },
+            { id: 'ann_edu', name: 'חינוך ולימודים (שנתי)', type: 'annual', target: 6148, desc: 'דמי שכלול, ציוד לבי"ס, קייטנות, לימודים' },
+            { id: 'ann_car', name: 'רכב ותחבורה (שנתי)', type: 'annual', target: 12000, desc: 'טיפולים ותיקוני רכב, טסט ורישוי' },
+            { id: 'ann_vacation', name: 'חופשה שנתית ואטרקציות', type: 'annual', target: 8400, desc: 'נופש שנתי, גן החיות התנ"כי, אטרקציות' },
+            { id: 'ann_home', name: 'אחזקת בית ודירה (שנתי)', type: 'annual', target: 7000, desc: 'רכישת מוצרים לבית, תחזוקה שנתית' },
+            { id: 'ann_health', name: 'בריאות (שנתי)', type: 'annual', target: 2250, desc: 'משקפיים/עדשות, טיפולי שיניים, בריכה' },
+            { id: 'ann_charity', name: 'צדקה, מעשרות ומצוות החג (שנתי)', type: 'annual', target: 9560, desc: 'מעשרות משנתי, מחצית השקל, קמחא דפסחא' }
+        ];
+
+        // Default Keyword Rules for Smart Auto-Categorization
+        const DEFAULT_KEYWORDS = [
+            { keyword: 'רמי לוי', categoryId: 'var_food' },
+            { keyword: 'אושר עד', categoryId: 'var_food' },
+            { keyword: 'נטו חיסכון', categoryId: 'var_food' },
+            { keyword: 'שפע ברכת', categoryId: 'var_food' },
+            { keyword: 'נחמה', categoryId: 'var_food' },
+            { keyword: 'ים שיווק', categoryId: 'var_food' },
+            { keyword: 'צפיחית בדבש', categoryId: 'var_food' },
+            { keyword: 'שילב', categoryId: 'var_clothing' },
+            { keyword: 'לידר', categoryId: 'var_clothing' },
+            { keyword: 'xpdfleader', categoryId: 'var_clothing' },
+            { keyword: 'מושיקו', categoryId: 'var_clothing' },
+            { keyword: 'בית החליפות', categoryId: 'var_clothing' },
+            { keyword: 'בזאר שטראוס', categoryId: 'var_clothing' },
+            { keyword: 'סונול', categoryId: 'var_fuel' },
+            { keyword: 'פז', categoryId: 'var_fuel' },
+            { keyword: 'אלון', categoryId: 'var_fuel' },
+            { keyword: 'דלק', categoryId: 'var_fuel' },
+            { keyword: 'רב קו', categoryId: 'var_transport' },
+            { keyword: 'כביש 6', categoryId: 'var_transport' },
+            { keyword: 'פנגו', categoryId: 'var_transport' },
+            { keyword: 'פיצה', categoryId: 'var_eatout' },
+            { keyword: 'מאפה', categoryId: 'var_eatout' },
+            { keyword: 'רגע מתוק', categoryId: 'var_eatout' },
+            { keyword: 'גריל', categoryId: 'var_eatout' },
+            { keyword: 'טועמי', categoryId: 'var_eatout' },
+            { keyword: 'שאול קוסמטיק', categoryId: 'var_general' },
+            { keyword: 'אושר צעצועים', categoryId: 'var_general' },
+            { keyword: 'סטייליש', categoryId: 'var_general' },
+            { keyword: 'מעלות בית יעקב', categoryId: 'fix_edu' },
+            { keyword: 'צהרונים', categoryId: 'fix_edu' },
+            { keyword: 'מעונות', categoryId: 'fix_edu' },
+            { keyword: 'ביטוח', categoryId: 'fix_insurance' },
+            { keyword: 'aig', categoryId: 'fix_insurance' },
+            { keyword: 'איילון', categoryId: 'fix_insurance' },
+            { keyword: 'כללית', categoryId: 'fix_health' },
+            { keyword: 'מכבי', categoryId: 'fix_health' },
+            { keyword: 'מאוחדת', categoryId: 'fix_health' },
+            { keyword: 'עטרת התורה', categoryId: 'fix_charity' },
+            { keyword: 'אהלי אשר', categoryId: 'fix_charity' },
+            { keyword: 'למחייתם', categoryId: 'fix_charity' },
+            { keyword: 'סלקום', categoryId: 'fix_comm' },
+            { keyword: 'hot mobile', categoryId: 'fix_comm' },
+            { keyword: 'נטפרי', categoryId: 'fix_comm' },
+            { keyword: 'סייפטק', categoryId: 'fix_comm' },
+            { keyword: 'בזק', categoryId: 'fix_comm' },
+            { keyword: 'ארנונה', categoryId: 'fix_home' },
+            { keyword: 'פלמינגו', categoryId: 'fix_home' },
+            { keyword: 'google one', categoryId: 'fix_other' },
+            { keyword: 'גן החיות', categoryId: 'ann_vacation' }
+        ];
+
+        // Realistic Preloaded Sample Data (Jan, Sep, Oct 2026)
+        function createDemoState() {
+            return {
+                months: ['ינואר 2026', 'ספטמבר 2026', 'אוקטובר 2026'],
+                categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+                keywords: JSON.parse(JSON.stringify(DEFAULT_KEYWORDS)),
+                transactions: [
+                    // ינואר 2026
+                    { id: 'j1', month: 'ינואר 2026', date: '06.01.26', merchant: 'רמי לוי ביתר עילית', amount: 2283.99, categoryId: 'var_food' },
+                    { id: 'j2', month: 'ינואר 2026', date: '10.12.25', merchant: 'נטו חיסכון ביתר עלית', amount: 841.08, categoryId: 'var_food' },
+                    { id: 'j3', month: 'ינואר 2026', date: '02.01.26', merchant: 'נחמה ביתר, שפע ברכת השם, ים שיווק', amount: 344.20, categoryId: 'var_food' },
+                    { id: 'j4', month: 'ינואר 2026', date: '09.12.25', merchant: 'מושיקו חנות הנעליים, בית החליפות', amount: 610.00, categoryId: 'var_clothing' },
+                    { id: 'j5', month: 'ינואר 2026', date: '24.12.25', merchant: 'סונול יער ביתר, פז YELLOW, אלון', amount: 1074.48, categoryId: 'var_fuel' },
+                    { id: 'j6', month: 'ינואר 2026', date: '15.10.25', merchant: 'רב קו אונליין, כביש 6', amount: 160.34, categoryId: 'var_transport' },
+                    { id: 'j7', month: 'ינואר 2026', date: '11.12.25', merchant: 'מאפה הבית, פיצוחי משיח, טועמי, גריל בי', amount: 721.76, categoryId: 'var_eatout' },
+                    { id: 'j8', month: 'ינואר 2026', date: '18.12.25', merchant: 'יומולדת גאולה, שפיצר חד פעמי, יוסי תקשורת, טמבורית', amount: 465.22, categoryId: 'var_general' },
+                    { id: 'j9', month: 'ינואר 2026', date: '23.11.25', merchant: 'מעלות בית יעקב, צהרונים ומעונות יום', amount: 719.80, categoryId: 'fix_edu' },
+                    { id: 'j10', month: 'ינואר 2026', date: '30.12.25', merchant: 'AIG ביטוח רכב וחובה, איילון ביטוח', amount: 515.35, categoryId: 'fix_insurance' },
+                    { id: 'j11', month: 'ינואר 2026', date: '06.01.26', merchant: 'שרותי בריאות כללית, ד"ר מרים שבד', amount: 583.71, categoryId: 'fix_health' },
+                    { id: 'j12', month: 'ינואר 2026', date: '01.01.26', merchant: 'עטרת התורה, משמעות לגלות חיים, אהלי אשר', amount: 335.62, categoryId: 'fix_charity' },
+                    { id: 'j13', month: 'ינואר 2026', date: '22.12.25', merchant: 'סלקום, HOT MOBILE, בזק אנרג׳י, סייפטק, נטפרי', amount: 223.03, categoryId: 'fix_comm' },
+                    { id: 'j14', month: 'ינואר 2026', date: '01.01.26', merchant: 'עיריית חיפה מיסי ארנונה', amount: 391.75, categoryId: 'fix_home' },
+                    { id: 'j15', month: 'ינואר 2026', date: '30.12.25', merchant: 'GOOGLE ONE', amount: 88.00, categoryId: 'fix_other' },
+                    { id: 'j16', month: 'ינואר 2026', date: '21.12.25', merchant: 'גן החיות התנ"כי בירושלים', amount: 90.00, categoryId: 'ann_vacation' },
+
+                    // ספטמבר 2026
+                    { id: 's1', month: 'ספטמבר 2026', date: '15.09.26', merchant: 'רמי לוי ביתר עילית, אושר עד', amount: 3120.50, categoryId: 'var_food' },
+                    { id: 's2', month: 'ספטמבר 2026', date: '18.09.26', merchant: 'שילב, גרביים עד הבית', amount: 178.06, categoryId: 'var_clothing' },
+                    { id: 's3', month: 'ספטמבר 2026', date: '20.09.26', merchant: 'סונול יער ביתר, פז', amount: 840.00, categoryId: 'var_fuel' },
+                    { id: 's4', month: 'ספטמבר 2026', date: '15.09.26', merchant: 'רב קו אונליין', amount: 157.50, categoryId: 'var_transport' },
+                    { id: 's5', month: 'ספטמבר 2026', date: '22.09.26', merchant: 'פיצה אורי, מאפה נאמן', amount: 420.00, categoryId: 'var_eatout' },
+                    { id: 's6', month: 'ספטמבר 2026', date: '25.09.26', merchant: 'PayPal Temu (חצי), משכן התכלת, טמבור בי', amount: 781.29, categoryId: 'var_general' },
+                    { id: 's7', month: 'ספטמבר 2026', date: '10.09.26', merchant: 'מעלות בית יעקב, צהרונים', amount: 1650.00, categoryId: 'fix_edu' },
+                    { id: 's8', month: 'ספטמבר 2026', date: '12.09.26', merchant: 'AIG ביטוחים, איילון', amount: 540.00, categoryId: 'fix_insurance' },
+                    { id: 's9', month: 'ספטמבר 2026', date: '14.09.26', merchant: 'שירותי בריאות כללית', amount: 280.00, categoryId: 'fix_health' },
+                    { id: 's10', month: 'ספטמבר 2026', date: '05.09.26', merchant: 'עטרת התורה, קופת העיר', amount: 1100.00, categoryId: 'fix_charity' },
+                    { id: 's11', month: 'ספטמבר 2026', date: '19.09.26', merchant: 'סלקום, נטפרי, סייפטק', amount: 185.00, categoryId: 'fix_comm' },
+                    { id: 's12', month: 'ספטמבר 2026', date: '24.09.26', merchant: 'קניות ביגוד לחגי תשרי ור"ה, PayPal Temu (חצי)', amount: 2000.00, categoryId: 'ann_cloth_tishrei' },
+
+                    // אוקטובר 2026
+                    { id: 'o1', month: 'אוקטובר 2026', date: '12.10.26', merchant: 'אושר עד ביתר עילית, רמי לוי', amount: 3410.80, categoryId: 'var_food' },
+                    { id: 'o2', month: 'אוקטובר 2026', date: '14.10.26', merchant: 'דלק מנטה אופקים, סונול', amount: 890.25, categoryId: 'var_fuel' },
+                    { id: 'o3', month: 'אוקטובר 2026', date: '15.10.26', merchant: 'רב קו אונליין, פנגו', amount: 182.01, categoryId: 'var_transport' },
+                    { id: 'o4', month: 'אוקטובר 2026', date: '21.10.26', merchant: 'פיצה אורי, קפה עומר', amount: 590.00, categoryId: 'var_eatout' },
+                    { id: 'o5', month: 'אוקטובר 2026', date: '15.10.26', merchant: 'שאול קוסמטיק, אושר צעצועים, סטייליש ביתר', amount: 275.20, categoryId: 'var_general' },
+                    { id: 'o6', month: 'אוקטובר 2026', date: '10.10.26', merchant: 'צהרונים ומעונות יום, מעלות בית יעקב', amount: 1720.00, categoryId: 'fix_edu' },
+                    { id: 'o7', month: 'אוקטובר 2026', date: '22.10.26', merchant: 'AIG ביטוח רכב, איילון', amount: 540.00, categoryId: 'fix_insurance' },
+                    { id: 'o8', month: 'אוקטובר 2026', date: '22.10.26', merchant: 'שרותי בריאות כללית', amount: 280.00, categoryId: 'fix_health' },
+                    { id: 'o9', month: 'אוקטובר 2026', date: '03.10.26', merchant: 'עטרת התורה, דורשי ציון', amount: 1120.00, categoryId: 'fix_charity' },
+                    { id: 'o10', month: 'אוקטובר 2026', date: '22.10.26', merchant: 'סלקום, HOT MOBILE, נטפרי, סייפטק', amount: 192.00, categoryId: 'fix_comm' },
+                    { id: 'o11', month: 'אוקטובר 2026', date: '08.10.26', merchant: 'לידר (חנויות ואתר), קיווי ביתר, בזאר שטראוס, נעלי מרטי', amount: 1812.24, categoryId: 'ann_cloth_tishrei' },
+                    { id: 'o12', month: 'אוקטובר 2026', date: '21.10.26', merchant: 'טים קרטינג, באולינג, משחקיית לב ירושלים', amount: 260.00, categoryId: 'ann_vacation' }
+                ]
+            };
+        }
+
+        let state = loadState();
+        let stagedRows = [];
+        let barChart = null;
+        let doughnutChart = null;
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.categories)) {
+                        if (!parsed.keywords) parsed.keywords = JSON.parse(JSON.stringify(DEFAULT_KEYWORDS));
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            const demo = createDemoState();
+            saveState(demo);
+            return demo;
+        }
+
+        function saveState(data = state) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function formatILS(val) {
+            const num = Number(val) || 0;
+            return '₪' + num.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const colors = type === 'success' ? 'bg-turq-700 text-white' : (type === 'warning' ? 'bg-amber-600 text-white' : 'bg-red-600 text-white');
+            el.className = `${colors} px-4 py-3 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-2 pointer-events-auto`;
+            el.innerHTML = `<span>${type === 'success' ? '✅' : 'ℹ️'}</span><span>${msg}</span>`;
+            container.appendChild(el);
+            requestAnimationFrame(() => el.classList.remove('opacity-0', 'translate-y-2'));
+            setTimeout(() => {
+                el.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => el.remove(), 300);
+            }, 3500);
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            ['dashboard', 'monthly', 'annual', 'upload', 'settings'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${t}`);
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tab}`);
+            activeBtn.classList.remove('tab-inactive');
+            activeBtn.classList.add('tab-active');
+
+            if (tab === 'dashboard') renderDashboard();
+            if (tab === 'monthly') renderMonthlyView();
+            if (tab === 'annual') renderAnnualView();
+            if (tab === 'settings') renderSettingsView();
+        }
+
+        function syncMonthDropdowns() {
+            const ids = ['dashboard-month-select', 'monthly-select', 'm-tx-month'];
+            ids.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const prev = sel.value;
+                sel.innerHTML = '';
+                if (state.months.length === 0) {
+                    state.months.push('חודש נוכחי 2026');
+                }
+                state.months.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    sel.appendChild(opt);
+                });
+                if (prev && state.months.includes(prev)) {
+                    sel.value = prev;
+                } else {
+                    sel.value = state.months[state.months.length - 1];
+                }
+            });
+        }
+
+        // =========================================================
+        // TAB 1: DASHBOARD & COMPARISON
+        // =========================================================
+        function renderDashboard() {
+            syncMonthDropdowns();
+            const selectedMonth = document.getElementById('dashboard-month-select').value;
+            document.getElementById('doughnut-month-badge').textContent = selectedMonth;
+
+            const varCats = state.categories.filter(c => c.type === 'variable');
+            const fixCats = state.categories.filter(c => c.type === 'fixed');
+            const annCats = state.categories.filter(c => c.type === 'annual');
+
+            // Monthly KPIs across period
+            let periodTotal = 0;
+            state.months.forEach(m => {
+                state.transactions.filter(t => t.month === m).forEach(t => {
+                    const c = state.categories.find(cat => cat.id === t.categoryId);
+                    if (c && (c.type === 'variable' || c.type === 'fixed')) {
+                        periodTotal += Number(t.amount);
+                    }
+                });
+            });
+
+            const activeMonthsCount = state.months.filter(m =>
+                state.transactions.some(t => t.month === m && ['variable', 'fixed'].includes(state.categories.find(c => c.id === t.categoryId)?.type))
+            ).length || 1;
+
+            const monthlyAvg = periodTotal / activeMonthsCount;
+            const monthlyTargetTotal = [...varCats, ...fixCats].reduce((s, c) => s + Number(c.target || 0), 0);
+
+            // Selected Month Variance
+            let selectedMonthActual = 0;
+            state.transactions.filter(t => t.month === selectedMonth).forEach(t => {
+                const c = state.categories.find(cat => cat.id === t.categoryId);
+                if (c && (c.type === 'variable' || c.type === 'fixed')) {
+                    selectedMonthActual += Number(t.amount);
+                }
+            });
+            const variance = monthlyTargetTotal - selectedMonthActual;
+
+            // Annual Budget Utilization
+            let annualActual = 0;
+            state.transactions.forEach(t => {
+                const c = state.categories.find(cat => cat.id === t.categoryId);
+                if (c && c.type === 'annual') annualActual += Number(t.amount);
+            });
+            const annualTarget = annCats.reduce((s, c) => s + Number(c.target || 0), 0);
+            const annualPct = annualTarget > 0 ? Math.round((annualActual / annualTarget) * 100) : 0;
+
+            document.getElementById('kpi-period-total').textContent = formatILS(periodTotal);
+            document.getElementById('kpi-period-sub').textContent = `מצטבר על פני ${activeMonthsCount} חודשים פעילים`;
+
+            document.getElementById('kpi-monthly-avg').textContent = formatILS(monthlyAvg);
+            document.getElementById('kpi-avg-sub').textContent = `יעד חודשי מתוכנן: ${formatILS(monthlyTargetTotal)}`;
+
+            const varEl = document.getElementById('kpi-month-variance');
+            const varStatus = document.getElementById('kpi-variance-status');
+            const varIcon = document.getElementById('kpi-variance-icon');
+            const varCard = document.getElementById('kpi-variance-card');
+
+            if (variance >= 0) {
+                varEl.textContent = `+${formatILS(variance)}`;
+                varEl.className = 'text-2xl font-extrabold mt-1 text-[#137333]';
+                varStatus.textContent = `עמידה ביעד ב-${selectedMonth}`;
+                varStatus.className = 'text-xs font-bold mt-3 text-[#137333]';
+                varIcon.textContent = '✅';
+                varIcon.className = 'p-2.5 rounded-xl bg-[#E6F4EA] text-[#137333] text-lg';
+                varCard.className = 'bg-[#E6F4EA]/50 p-5 rounded-2xl border border-emerald-200 card-shadow';
+            } else {
+                varEl.textContent = `-${formatILS(Math.abs(variance))}`;
+                varEl.className = 'text-2xl font-extrabold mt-1 text-[#C5221F]';
+                varStatus.textContent = `חריגה מהיעד ב-${selectedMonth}`;
+                varStatus.className = 'text-xs font-bold mt-3 text-[#C5221F]';
+                varIcon.textContent = '⚠️';
+                varIcon.className = 'p-2.5 rounded-xl bg-[#FCE8E6] text-[#C5221F] text-lg';
+                varCard.className = 'bg-[#FCE8E6]/50 p-5 rounded-2xl border border-red-200 card-shadow';
+            }
+
+            document.getElementById('kpi-annual-pct').textContent = `${annualPct}%`;
+            document.getElementById('kpi-annual-sub').textContent = `${formatILS(annualActual)} מתוך ${formatILS(annualTarget)}`;
+
+            renderDashboardCharts(selectedMonth);
+            renderDashboardComparisonTable();
+        }
+
+        function renderDashboardCharts(selectedMonth) {
+            const labels = state.months;
+            const varSeries = labels.map(m => state.transactions
+                .filter(t => t.month === m && state.categories.find(c => c.id === t.categoryId)?.type === 'variable')
+                .reduce((s, t) => s + Number(t.amount), 0));
+            const fixSeries = labels.map(m => state.transactions
+                .filter(t => t.month === m && state.categories.find(c => c.id === t.categoryId)?.type === 'fixed')
+                .reduce((s, t) => s + Number(t.amount), 0));
+
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            if (barChart) barChart.destroy();
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'הוצאות משתנות', data: varSeries, backgroundColor: '#0D9488', borderRadius: 6 },
+                        { label: 'הוצאות קבועות והו"ק', data: fixSeries, backgroundColor: '#FB923C', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Heebo', weight: '700' } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { family: 'Heebo' }, callback: v => '₪' + v.toLocaleString() } },
+                        x: { ticks: { font: { family: 'Heebo', weight: '700' } } }
+                    }
+                }
+            });
+
+            // Doughnut Chart
+            const cats = state.categories.filter(c => c.type === 'variable' || c.type === 'fixed');
+            const dLabels = [];
+            const dData = [];
+            cats.forEach(c => {
+                const sum = state.transactions
+                    .filter(t => t.month === selectedMonth && t.categoryId === c.id)
+                    .reduce((s, t) => s + Number(t.amount), 0);
+                if (sum > 0) {
+                    dLabels.push(c.name);
+                    dData.push(sum);
+                }
+            });
+
+            const palette = ['#0D9488', '#FB923C', '#10B981', '#FACC15', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#64748B'];
+            const dCtx = document.getElementById('doughnutChart').getContext('2d');
+            if (doughnutChart) doughnutChart.destroy();
+            doughnutChart = new Chart(dCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: dLabels.length ? dLabels : ['אין עסקאות לחודש זה'],
+                    datasets: [{
+                        data: dData.length ? dData : [1],
+                        backgroundColor: dData.length ? palette : ['#e2e8f0'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Heebo', size: 11 } } } }
+                }
+            });
+        }
+
+        function renderDashboardComparisonTable() {
+            const thead = document.getElementById('comparison-thead');
+            const tbody = document.getElementById('comparison-tbody');
+            const tfoot = document.getElementById('comparison-tfoot');
+
+            const months = state.months;
+            const cats = state.categories.filter(c => c.type === 'variable' || c.type === 'fixed');
+
+            let headHtml = `<tr>
+                <th class="py-3 px-4 font-bold">קטגוריה</th>
+                <th class="py-3 px-3 font-bold">סוג</th>`;
+            months.forEach(m => headHtml += `<th class="py-3 px-3 font-bold">${m}</th>`);
+            headHtml += `<th class="py-3 px-3 font-bold bg-turq-800">סה"כ לתקופה</th>
+                <th class="py-3 px-3 font-bold bg-turq-800">ממוצע חודשי</th>
+                <th class="py-3 px-3 font-bold bg-turq-800">% מסה"כ</th></tr>`;
+            thead.innerHTML = headHtml;
+
+            let grandTotal = 0;
+            const colTotals = new Array(months.length).fill(0);
+
+            const rows = cats.map(c => {
+                let rowSum = 0;
+                const vals = months.map((m, idx) => {
+                    const s = state.transactions
+                        .filter(t => t.month === m && t.categoryId === c.id)
+                        .reduce((acc, t) => acc + Number(t.amount), 0);
+                    rowSum += s;
+                    colTotals[idx] += s;
+                    return s;
+                });
+                grandTotal += rowSum;
+                return { c, vals, rowSum };
+            });
+
+            let bodyHtml = '';
+            rows.forEach(({ c, vals, rowSum }) => {
+                const avg = months.length ? rowSum / months.length : 0;
+                const pct = grandTotal > 0 ? ((rowSum / grandTotal) * 100).toFixed(1) : '0.0';
+                const badge = c.type === 'variable'
+                    ? '<span class="px-2 py-0.5 rounded-md bg-turq-50 text-turq-700 text-[11px] font-bold">משתנות</span>'
+                    : '<span class="px-2 py-0.5 rounded-md bg-peach-50 text-orange-800 text-[11px] font-bold">קבועות</span>';
+
+                bodyHtml += `<tr class="hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-4 font-bold text-slate-800">${c.name}</td>
+                    <td class="py-2.5 px-3">${badge}</td>`;
+                vals.forEach(v => bodyHtml += `<td class="py-2.5 px-3 text-slate-700">${formatILS(v)}</td>`);
+                bodyHtml += `<td class="py-2.5 px-3 font-extrabold text-turq-800 bg-turq-50/40">${formatILS(rowSum)}</td>
+                    <td class="py-2.5 px-3 text-slate-600 bg-turq-50/40">${formatILS(avg)}</td>
+                    <td class="py-2.5 px-3 text-slate-600 bg-turq-50/40">${pct}%</td></tr>`;
+            });
+            tbody.innerHTML = bodyHtml;
+
+            const totalAvg = months.length ? grandTotal / months.length : 0;
+            let footHtml = `<tr><td class="py-3 px-4" colspan="2">סה"כ הוצאות חודשיות</td>`;
+            colTotals.forEach(v => footHtml += `<td class="py-3 px-3">${formatILS(v)}</td>`);
+            footHtml += `<td class="py-3 px-3">${formatILS(grandTotal)}</td>
+                <td class="py-3 px-3">${formatILS(totalAvg)}</td>
+                <td class="py-3 px-3">100%</td></tr>`;
+            tfoot.innerHTML = footHtml;
+        }
+
+        // =========================================================
+        // TAB 2: MONTHLY TRACKING & TARGETS
+        // =========================================================
+        function renderMonthlyView() {
+            syncMonthDropdowns();
+            const month = document.getElementById('monthly-select').value;
+            const monthTxs = state.transactions.filter(t => t.month === month);
+
+            renderMonthlyTableGroup('variable', monthTxs, 'variable-tbody', 'variable-tfoot', 'var-header-total');
+            renderMonthlyTableGroup('fixed', monthTxs, 'fixed-tbody', 'fixed-tfoot', 'fix-header-total');
+
+            // Populate Category Filter in Transaction Breakdown
+            const filterSel = document.getElementById('tx-category-filter');
+            const prevFilter = filterSel.value;
+            filterSel.innerHTML = '<option value="ALL">כל הקטגוריות בחודש</option>' +
+                state.categories.filter(c => c.type !== 'annual').map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (prevFilter) filterSel.value = prevFilter;
+
+            renderMonthlyTransactions();
+        }
+
+        function renderMonthlyTableGroup(type, monthTxs, tbodyId, tfootId, badgeId) {
+            const cats = state.categories.filter(c => c.type === type);
+            const tbody = document.getElementById(tbodyId);
+            const tfoot = document.getElementById(tfootId);
+
+            let totalActual = 0;
+            let totalTarget = 0;
+            let html = '';
+
+            cats.forEach(c => {
+                const txs = monthTxs.filter(t => t.categoryId === c.id);
+                const actual = txs.reduce((s, t) => s + Number(t.amount), 0);
+                const target = Number(c.target || 0);
+                const diff = target - actual;
+
+                totalActual += actual;
+                totalTarget += target;
+
+                const stores = [...new Set(txs.map(t => t.merchant))].join(', ');
+                const varClass = diff >= 0 ? 'variance-positive' : 'variance-negative';
+                const varText = diff >= 0 ? `+${formatILS(diff)}` : `-${formatILS(Math.abs(diff))}`;
+
+                html += `<tr onclick="filterTransactionsByCategory('${c.id}')" class="hover:bg-turq-50/60 cursor-pointer transition">
+                    <td class="py-3 px-3 font-bold text-slate-800 whitespace-nowrap">${c.name}</td>
+                    <td class="py-3 px-3 text-xs text-slate-500 max-w-xs">${stores || '<span class="text-slate-300">—</span>'}</td>
+                    <td class="py-3 px-3 font-extrabold text-slate-900 whitespace-nowrap">${formatILS(actual)}</td>
+                    <td class="py-3 px-3 text-slate-600 whitespace-nowrap">${formatILS(target)}</td>
+                    <td class="py-3 px-3 whitespace-nowrap ${varClass}">${varText}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+
+            const totalDiff = totalTarget - totalActual;
+            const totalVarClass = totalDiff >= 0 ? 'text-[#137333]' : 'text-[#C5221F]';
+            const totalVarText = totalDiff >= 0 ? `+${formatILS(totalDiff)}` : `-${formatILS(Math.abs(totalDiff))}`;
+
+            tfoot.innerHTML = `<tr>
+                <td class="py-3 px-3" colspan="2">סה"כ</td>
+                <td class="py-3 px-3">${formatILS(totalActual)}</td>
+                <td class="py-3 px-3">${formatILS(totalTarget)}</td>
+                <td class="py-3 px-3 ${totalVarClass}">${totalVarText}</td>
+            </tr>`;
+
+            document.getElementById(badgeId).textContent = `סה"כ: ${formatILS(totalActual)}`;
+        }
+
+        function filterTransactionsByCategory(catId) {
+            const sel = document.getElementById('tx-category-filter');
+            sel.value = catId;
+            renderMonthlyTransactions();
+            document.getElementById('monthly-tx-tbody').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function renderMonthlyTransactions() {
+            const month = document.getElementById('monthly-select').value;
+            const catFilter = document.getElementById('tx-category-filter').value;
+            const search = (document.getElementById('tx-search-box').value || '').trim().toLowerCase();
+            const tbody = document.getElementById('monthly-tx-tbody');
+
+            document.getElementById('tx-list-title').textContent = `פירוט עסקאות עבור ${month}`;
+
+            const list = state.transactions.filter(t => {
+                if (t.month !== month) return false;
+                if (catFilter !== 'ALL' && t.categoryId !== catFilter) return false;
+                if (search && !t.merchant.toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-xs text-slate-400">אין עסקאות להצגה בסינון הנוכחי</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(tx => {
+                const options = state.categories.map(c => {
+                    const tag = c.type === 'annual' ? '[שנתי/חגים] ' : (c.type === 'fixed' ? '[קבוע] ' : '');
+                    return `<option value="${c.id}" ${c.id === tx.categoryId ? 'selected' : ''}>${tag}${c.name}</option>`;
+                }).join('');
+
+                return `<tr class="hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-4 text-xs text-slate-500">${tx.date}</td>
+                    <td class="py-2.5 px-4 font-bold text-slate-800">${tx.merchant}</td>
+                    <td class="py-2.5 px-4 font-extrabold text-turq-700">${formatILS(tx.amount)}</td>
+                    <td class="py-2.5 px-4">
+                        <select onchange="changeTxCategory('${tx.id}', this.value)" class="text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white text-slate-700 font-semibold">
+                            ${options}
+                        </select>
+                    </td>
+                    <td class="py-2.5 px-4 text-center">
+                        <button onclick="removeTx('${tx.id}')" class="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-lg font-bold transition">מחק</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function changeTxCategory(id, catId) {
+            const tx = state.transactions.find(t => t.id === id);
+            if (tx) {
+                tx.categoryId = catId;
+                saveState();
+                renderMonthlyView();
+                showToast('שיוך העסקה עודכן בהצלחה');
+            }
+        }
+
+        function removeTx(id) {
+            state.transactions = state.transactions.filter(t => t.id !== id);
+            saveState();
+            renderMonthlyView();
+            showToast('העסקה נמחקה', 'warning');
+        }
+
+        // =========================================================
+        // TAB 3: ANNUAL & HOLIDAY EXPENSES
+        // =========================================================
+        function renderAnnualView() {
+            const annCats = state.categories.filter(c => c.type === 'annual');
+            const tbody = document.getElementById('annual-tbody');
+            const tfoot = document.getElementById('annual-tfoot');
+
+            let totalTarget = 0;
+            let totalActual = 0;
+
+            tbody.innerHTML = annCats.map(c => {
+                const txs = state.transactions.filter(t => t.categoryId === c.id);
+                const actual = txs.reduce((s, t) => s + Number(t.amount), 0);
+                const target = Number(c.target || 0);
+                const diff = target - actual;
+                const pct = target > 0 ? Math.min(100, Math.round((actual / target) * 100)) : 0;
+
+                totalTarget += target;
+                totalActual += actual;
+
+                const actualStores = [...new Set(txs.map(t => `${t.merchant} (${t.month})`))].join(', ');
+                const descLine = actualStores ? `${c.desc} | בפועל: ${actualStores}` : c.desc;
+                const varClass = diff >= 0 ? 'variance-positive' : 'variance-negative';
+                const varText = diff >= 0 ? `+${formatILS(diff)}` : `-${formatILS(Math.abs(diff))}`;
+                const barFill = actual > target ? 'bg-red-500' : 'bg-mint-500';
+
+                return `<tr class="hover:bg-turq-50/40 transition">
+                    <td class="py-3.5 px-4 font-extrabold text-turq-800">${c.name}</td>
+                    <td class="py-3.5 px-4 text-xs text-slate-600 max-w-md">${descLine}</td>
+                    <td class="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">${formatILS(target)}</td>
+                    <td class="py-3.5 px-4 font-extrabold text-slate-900 whitespace-nowrap">${formatILS(actual)}</td>
+                    <td class="py-3.5 px-4 whitespace-nowrap ${varClass}">${varText}</td>
+                    <td class="py-3.5 px-4 w-36">
+                        <div class="flex items-center gap-2">
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="${barFill} h-2 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                            <span class="text-xs font-extrabold text-slate-700">${pct}%</span>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            const totalDiff = totalTarget - totalActual;
+            const totalPct = totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0;
+
+            tfoot.innerHTML = `<tr>
+                <td class="py-3.5 px-4" colspan="2">סה"כ תקציב הוצאות שנתיות ומעגל השנה</td>
+                <td class="py-3.5 px-4">${formatILS(totalTarget)}</td>
+                <td class="py-3.5 px-4">${formatILS(totalActual)}</td>
+                <td class="py-3.5 px-4">${totalDiff >= 0 ? '+' + formatILS(totalDiff) : '-' + formatILS(Math.abs(totalDiff))}</td>
+                <td class="py-3.5 px-4">${totalPct}%</td>
+            </tr>`;
+
+            document.getElementById('ann-kpi-target').textContent = formatILS(totalTarget);
+            document.getElementById('ann-kpi-actual').textContent = formatILS(totalActual);
+            document.getElementById('ann-kpi-diff').textContent = totalDiff >= 0 ? formatILS(totalDiff) : `-${formatILS(Math.abs(totalDiff))}`;
+            document.getElementById('ann-kpi-pct').textContent = `${totalPct}%`;
+            document.getElementById('ann-kpi-bar').style.width = `${Math.min(100, totalPct)}%`;
+        }
+
+        // =========================================================
+        // TAB 4: SMART STATEMENT UPLOAD (EXCEL / CSV)
+        // =========================================================
+        function classifyMerchantByKeywords(merchant) {
+            const lower = (merchant || '').toLowerCase();
+            for (const rule of state.keywords) {
+                if (lower.includes(rule.keyword.toLowerCase())) {
+                    if (state.categories.some(c => c.id === rule.categoryId)) {
+                        return rule.categoryId;
+                    }
+                }
+            }
+            return 'var_general';
+        }
+
+        function handleStatementUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    extractTransactionsFromSheet(rows);
+                } catch (err) {
+                    console.error(err);
+                    showToast('לא ניתן לקרוא את הקובץ. ודא שזהו קובץ Excel או CSV תקין.', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function extractTransactionsFromSheet(rows) {
+            stagedRows = [];
+            let detectedMonth = '';
+            const hebMonths = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+            rows.forEach(row => {
+                const joined = row.join(' ');
+                if (!detectedMonth) {
+                    for (const hm of hebMonths) {
+                        if (joined.includes(hm)) {
+                            const ym = joined.match(/202\d/);
+                            detectedMonth = `${hm} ${ym ? ym[0] : '2026'}`;
+                            break;
+                        }
+                    }
+                }
+
+                let dateStr = '';
+                row.forEach(cell => {
+                    const s = String(cell).trim();
+                    if (!dateStr && /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(s)) {
+                        dateStr = s;
+                    }
+                });
+
+                if (dateStr && !joined.includes('סה"כ') && !joined.includes('תאריך רכישה')) {
+                    let merchantStr = '';
+                    const nums = [];
+                    row.forEach(cell => {
+                        const s = String(cell).trim().replace(/,/g, '');
+                        if (s && !isNaN(s) && Number(s) > 0 && Number(s) < 60000) {
+                            nums.push(Number(s));
+                        } else if (s.length > 2 && !/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(s) && s !== '₪' && !s.includes('הוראת קבע') && !s.includes('תשלום')) {
+                            if (s.length > merchantStr.length) merchantStr = s;
+                        }
+                    });
+
+                    if (merchantStr && nums.length > 0) {
+                        const chargeAmount = nums.length >= 2 ? nums[1] : nums[0];
+                        stagedRows.push({
+                            date: dateStr,
+                            merchant: merchantStr,
+                            amount: chargeAmount,
+                            categoryId: classifyMerchantByKeywords(merchantStr)
+                        });
+                    }
+                }
+            });
+
+            if (stagedRows.length === 0) {
+                showToast('לא זוהו שורות עסקה בקובץ שהועלה', 'warning');
+                return;
+            }
+
+            if (detectedMonth) {
+                document.getElementById('staging-target-month').value = detectedMonth;
+            }
+            document.getElementById('route-clothing-holiday-toggle').checked = false;
+            renderStagingRows();
+            document.getElementById('staging-wrapper').classList.remove('hidden');
+            showToast(`זוהו ${stagedRows.length} עסקאות מהקובץ!`);
+        }
+
+        function renderStagingRows() {
+            const tbody = document.getElementById('staging-tbody');
+            const total = stagedRows.reduce((s, r) => s + Number(r.amount), 0);
+            document.getElementById('staging-stats').textContent = `זוהו ${stagedRows.length} עסקאות בסך כולל של ${formatILS(total)}`;
+
+            tbody.innerHTML = stagedRows.map((row, idx) => {
+                const opts = state.categories.map(c => {
+                    const prefix = c.type === 'annual' ? '[שנתי/חגים] ' : (c.type === 'fixed' ? '[קבוע] ' : '');
+                    return `<option value="${c.id}" ${c.id === row.categoryId ? 'selected' : ''}>${prefix}${c.name}</option>`;
+                }).join('');
+
+                return `<tr>
+                    <td class="py-2 px-3 text-slate-500">${row.date}</td>
+                    <td class="py-2 px-3 font-bold text-slate-800">${row.merchant}</td>
+                    <td class="py-2 px-3 font-extrabold text-turq-700">${formatILS(row.amount)}</td>
+                    <td class="py-2 px-3">
+                        <select onchange="stagedRows[${idx}].categoryId = this.value" class="border border-slate-300 rounded-lg px-2 py-1 bg-white text-slate-800 font-semibold">
+                            ${opts}
+                        </select>
+                    </td>
+                    <td class="py-2 px-3 text-center">
+                        <button onclick="splitStagedRow5050(${idx})" class="text-[11px] bg-peach-100 hover:bg-peach-200 text-orange-900 font-bold px-2.5 py-1 rounded-lg transition" title="פצל 50% ביגוד ו-50% כללי">
+                            פצל 50%/50%
+                        </button>
+                    </td>
+                    <td class="py-2 px-3 text-center">
+                        <button onclick="removeStagedItem(${idx})" class="text-red-500 hover:text-red-700 font-extrabold text-sm">&times;</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function splitStagedRow5050(idx) {
+            const item = stagedRows[idx];
+            if (!item) return;
+            const half = Number((item.amount / 2).toFixed(2));
+            const rem = Number((item.amount - half).toFixed(2));
+            stagedRows.splice(idx, 1,
+                { date: item.date, merchant: `${item.merchant} (חצי ביגוד)`, amount: half, categoryId: 'var_clothing' },
+                { date: item.date, merchant: `${item.merchant} (חצי כללי)`, amount: rem, categoryId: 'var_general' }
+            );
+            renderStagingRows();
+            showToast('העסקה פוצלה 50% ביגוד ו-50% כללי');
+        }
+
+        function toggleHolidayClothingRouting(checked) {
+            stagedRows.forEach(r => {
+                if (checked && r.categoryId === 'var_clothing') {
+                    r.categoryId = 'ann_cloth_tishrei';
+                } else if (!checked && (r.categoryId === 'ann_cloth_tishrei' || r.categoryId === 'ann_cloth_pesach')) {
+                    r.categoryId = 'var_clothing';
+                }
+            });
+            renderStagingRows();
+        }
+
+        function removeStagedItem(idx) {
+            stagedRows.splice(idx, 1);
+            renderStagingRows();
+        }
+
+        function clearStaging() {
+            stagedRows = [];
+            document.getElementById('staging-wrapper').classList.add('hidden');
+        }
+
+        function commitStagedRows() {
+            const targetMonth = (document.getElementById('staging-target-month').value || '').trim();
+            if (!targetMonth) {
+                showToast('יש להזין שם חודש תקין', 'warning');
+                return;
+            }
+            if (!state.months.includes(targetMonth)) {
+                state.months.push(targetMonth);
+            }
+            stagedRows.forEach((r, idx) => {
+                state.transactions.push({
+                    id: 'tx_' + Date.now() + '_' + idx,
+                    month: targetMonth,
+                    date: r.date,
+                    merchant: r.merchant,
+                    amount: Number(r.amount),
+                    categoryId: r.categoryId
+                });
+            });
+            saveState();
+            const count = stagedRows.length;
+            clearStaging();
+            syncMonthDropdowns();
+            document.getElementById('monthly-select').value = targetMonth;
+            switchTab('monthly');
+            showToast(`נוספו בהצלחה ${count} עסקאות לחודש ${targetMonth}!`);
+        }
+
+        // =========================================================
+        // TAB 5: SETTINGS, CATEGORIES & KEYWORDS
+        // =========================================================
+        function renderSettingsView() {
+            // Render Categories
+            const catList = document.getElementById('cfg-categories-list');
+            catList.innerHTML = state.categories.map(c => {
+                const badge = c.type === 'variable'
+                    ? '<span class="text-[10px] px-2 py-0.5 rounded bg-turq-50 text-turq-700 font-bold">משתנה</span>'
+                    : (c.type === 'fixed'
+                        ? '<span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">קבועה</span>'
+                        : '<span class="text-[10px] px-2 py-0.5 rounded bg-peach-100 text-orange-800 font-bold">שנתי/חגים</span>');
+
+                return `<div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50">
+                    <div class="flex items-center gap-2 min-w-0">
+                        ${badge}
+                        <input type="text" value="${c.name}" onchange="renameCategory('${c.id}', this.value)" class="text-xs font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-turq-600 focus:outline-none truncate w-full">
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <label class="text-[11px] text-slate-500">יעד ₪:</label>
+                        <input type="number" value="${c.target}" onchange="updateTarget('${c.id}', this.value)" class="w-20 text-xs font-extrabold text-turq-800 border border-slate-300 rounded-lg px-2 py-1">
+                        <button onclick="removeCategory('${c.id}')" class="text-slate-400 hover:text-red-600 font-bold px-1.5" title="מחק קטגוריה">&times;</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Populate Keyword Category Select
+            const kwCatSel = document.getElementById('cfg-kw-cat');
+            kwCatSel.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            // Render Keywords
+            const kwList = document.getElementById('cfg-keywords-list');
+            kwList.innerHTML = state.keywords.map((k, idx) => {
+                const catName = state.categories.find(c => c.id === k.categoryId)?.name || 'כללי';
+                return `<div class="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50">
+                    <div>
+                        <span class="font-extrabold text-slate-800">"${k.keyword}"</span>
+                        <span class="text-slate-400 mx-1.5">→</span>
+                        <span class="text-turq-700 font-bold">${catName}</span>
+                    </div>
+                    <button onclick="removeKeyword(${idx})" class="text-slate-400 hover:text-red-600 font-bold px-1.5">&times;</button>
+                </div>`;
+            }).join('');
+        }
+
+        function handleAddCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('cfg-cat-name').value.trim();
+            const type = document.getElementById('cfg-cat-type').value;
+            const target = Number(document.getElementById('cfg-cat-target').value) || 0;
+            if (!name) return;
+
+            state.categories.push({
+                id: 'cat_' + Date.now(),
+                name,
+                type,
+                target,
+                desc: 'קטגוריה מותאמת אישית'
+            });
+            saveState();
+            document.getElementById('cfg-cat-name').value = '';
+            document.getElementById('cfg-cat-target').value = '';
+            renderSettingsView();
+            showToast(`הקטגוריה "${name}" נוספה`);
+        }
+
+        function renameCategory(id, newName) {
+            const c = state.categories.find(cat => cat.id === id);
+            if (c && newName.trim()) {
+                c.name = newName.trim();
+                saveState();
+                showToast('שם הקטגוריה עודכן');
+            }
+        }
+
+        function updateTarget(id, val) {
+            const c = state.categories.find(cat => cat.id === id);
+            if (c) {
+                c.target = Number(val) || 0;
+                saveState();
+                showToast(`היעד עודכן ל-${formatILS(c.target)}`);
+            }
+        }
+
+        function removeCategory(id) {
+            if (state.categories.length <= 3) {
+                showToast('חייבות להישאר לפחות 3 קטגוריות', 'warning');
+                return;
+            }
+            state.categories = state.categories.filter(c => c.id !== id);
+            saveState();
+            renderSettingsView();
+            showToast('הקטגוריה הוסרה', 'warning');
+        }
+
+        function handleAddKeywordRule(e) {
+            e.preventDefault();
+            const keyword = document.getElementById('cfg-kw-word').value.trim();
+            const categoryId = document.getElementById('cfg-kw-cat').value;
+            if (!keyword) return;
+
+            state.keywords.unshift({ keyword, categoryId });
+            saveState();
+            document.getElementById('cfg-kw-word').value = '';
+            renderSettingsView();
+            showToast(`נשמר כלל זיהוי עבור "${keyword}"`);
+        }
+
+        function removeKeyword(idx) {
+            state.keywords.splice(idx, 1);
+            saveState();
+            renderSettingsView();
+        }
+
+        // =========================================================
+        // MODALS & GLOBAL ACTIONS (FRESH START, JSON BACKUP, EXCEL)
+        // =========================================================
+        function openAddTransactionModal(defaultType = 'variable') {
+            syncMonthDropdowns();
+            const sel = document.getElementById('m-tx-cat');
+            sel.innerHTML = state.categories.map(c => {
+                const tag = c.type === 'annual' ? '[שנתי/חגים] ' : (c.type === 'fixed' ? '[קבוע] ' : '');
+                return `<option value="${c.id}">${tag}${c.name}</option>`;
+            }).join('');
+
+            if (defaultType === 'annual') {
+                const firstAnn = state.categories.find(c => c.type === 'annual');
+                if (firstAnn) sel.value = firstAnn.id;
+            }
+            document.getElementById('modal-add-tx').classList.remove('hidden');
+        }
+
+        function closeAddTransactionModal() {
+            document.getElementById('modal-add-tx').classList.add('hidden');
+        }
+
+        function submitManualTransaction(e) {
+            e.preventDefault();
+            const month = document.getElementById('m-tx-month').value;
+            const date = document.getElementById('m-tx-date').value.trim();
+            const merchant = document.getElementById('m-tx-merchant').value.trim();
+            const amount = Number(document.getElementById('m-tx-amount').value);
+            const categoryId = document.getElementById('m-tx-cat').value;
+            if (!merchant || amount <= 0) return;
+
+            state.transactions.push({ id: 'm_' + Date.now(), month, date, merchant, amount, categoryId });
+            saveState();
+            closeAddTransactionModal();
+            document.getElementById('m-tx-merchant').value = '';
+            document.getElementById('m-tx-amount').value = '';
+            renderDashboard();
+            renderMonthlyView();
+            renderAnnualView();
+            showToast('ההוצאה נוספה בהצלחה');
+        }
+
+        function openAddMonthModal() {
+            document.getElementById('modal-add-month').classList.remove('hidden');
+        }
+
+        function closeAddMonthModal() {
+            document.getElementById('modal-add-month').classList.add('hidden');
+        }
+
+        function submitNewMonth(e) {
+            e.preventDefault();
+            const name = document.getElementById('m-new-month-name').value.trim();
+            if (!name) return;
+            if (!state.months.includes(name)) {
+                state.months.push(name);
+                saveState();
+            }
+            syncMonthDropdowns();
+            document.getElementById('monthly-select').value = name;
+            closeAddMonthModal();
+            renderMonthlyView();
+            showToast(`נפתח חודש חדש: ${name}`);
+        }
+
+        function showConfirm(title, body, onOk) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-body').textContent = body;
+            document.getElementById('confirm-ok-btn').onclick = () => {
+                closeConfirmModal();
+                onOk();
+            };
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+        }
+
+        function startFreshConfirm() {
+            showConfirm(
+                'התחלה מאפס / ניקוי נתוני דוגמה',
+                'פעולה זו תנקה את כל העסקאות ותשאיר טבלאות נקיות לגמרי (תוך שמירה על הקטגוריות והיעדים שלך) כדי שתוכל להזין נתונים אישיים משלך. להמשיך?',
+                () => {
+                    state.transactions = [];
+                    state.months = ['נובמבר 2026'];
+                    saveState();
+                    syncMonthDropdowns();
+                    renderDashboard();
+                    renderMonthlyView();
+                    renderAnnualView();
+                    showToast('המערכת אופסה ומוכנה לנתונים האישיים שלך!');
+                }
+            );
+        }
+
+        // JSON Backup & Restore
+        function exportJsonBackup() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `גיבוי_תקציב_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('קובץ הגיבוי (JSON) נשמר במחשב שלך');
+        }
+
+        function importJsonBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.categories) && Array.isArray(parsed.transactions)) {
+                        state = parsed;
+                        saveState();
+                        syncMonthDropdowns();
+                        renderDashboard();
+                        renderMonthlyView();
+                        renderAnnualView();
+                        showToast('הנתונים שוחזרו מקובץ הגיבוי בהצלחה!');
+                    } else {
+                        showToast('קובץ גיבוי לא תקין', 'error');
+                    }
+                } catch (err) {
+                    showToast('שגיאה בקריאת קובץ הגיבוי', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Multi-Sheet Excel Export (.xlsx)
+        function exportToExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+                wb.Workbook = { Views: [{ RTL: true }] };
+
+                // Sheet 1: סיכום והשוואה
+                const monthlyCats = state.categories.filter(c => c.type === 'variable' || c.type === 'fixed');
+                const compHead = ['קטגוריה', 'סוג', ...state.months, 'סה"כ לתקופה', 'ממוצע חודשי'];
+                const compData = [compHead];
+
+                monthlyCats.forEach(c => {
+                    let sum = 0;
+                    const vals = state.months.map(m => {
+                        const s = state.transactions
+                            .filter(t => t.month === m && t.categoryId === c.id)
+                            .reduce((acc, t) => acc + Number(t.amount), 0);
+                        sum += s;
+                        return s;
+                    });
+                    const avg = state.months.length ? Number((sum / state.months.length).toFixed(2)) : 0;
+                    compData.push([c.name, c.type === 'variable' ? 'משתנה' : 'קבועה', ...vals, sum, avg]);
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(compData), 'סיכום והשוואה');
+
+                // Monthly Sheets
+                state.months.forEach(m => {
+                    const rows = [['', 'הוצאות משתנות', 'פירוט החנויות', 'סכום בפועל (₪)', 'יעד חודשי (₪)', 'הפרש מהיעד (₪)']];
+                    const mTxs = state.transactions.filter(t => t.month === m);
+
+                    state.categories.filter(c => c.type === 'variable').forEach(c => {
+                        const txs = mTxs.filter(t => t.categoryId === c.id);
+                        const actual = txs.reduce((s, t) => s + Number(t.amount), 0);
+                        const stores = [...new Set(txs.map(t => t.merchant))].join(', ');
+                        rows.push(['', c.name, stores, actual, c.target, c.target - actual]);
+                    });
+
+                    rows.push([]);
+                    rows.push(['', 'הוצאות קבועות והו"ק', 'פירוט החנויות', 'סכום בפועל (₪)', 'יעד חודשי (₪)', 'הפרש מהיעד (₪)']);
+
+                    state.categories.filter(c => c.type === 'fixed').forEach(c => {
+                        const txs = mTxs.filter(t => t.categoryId === c.id);
+                        const actual = txs.reduce((s, t) => s + Number(t.amount), 0);
+                        const stores = [...new Set(txs.map(t => t.merchant))].join(', ');
+                        rows.push(['', c.name, stores, actual, c.target, c.target - actual]);
+                    });
+
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), m.substring(0, 31));
+                });
+
+                // Annual Sheet: הוצאות שנתיות
+                const annRows = [['קטגוריה שנתית', 'פירוט הסעיפים', 'יעד שנתי (₪)', 'ביצוע בפועל (₪)', 'הפרש מהיעד (₪)']];
+                state.categories.filter(c => c.type === 'annual').forEach(c => {
+                    const actual = state.transactions.filter(t => t.categoryId === c.id).reduce((s, t) => s + Number(t.amount), 0);
+                    annRows.push([c.name, c.desc, c.target, actual, c.target - actual]);
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(annRows), 'הוצאות שנתיות');
+
+                XLSX.writeFile(wb, 'ניהול_תקציב_משפחתי.xlsx');
+                showToast('קובץ האקסל המלא (Excel) הורד בהצלחה!');
+            } catch (err) {
+                console.error(err);
+                showToast('שגיאה בייצוא לאקסל', 'error');
+            }
+        }
+
+        // Boot Application
+        window.addEventListener('DOMContentLoaded', () => {
+            syncMonthDropdowns();
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
